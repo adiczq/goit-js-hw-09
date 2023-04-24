@@ -10,9 +10,7 @@ const timerHours = document.querySelector('[data-hours]');
 const timerMinutes = document.querySelector('[data-minutes]');
 const timerSeconds = document.querySelector('[data-seconds]');
 
-function pad(value) {
-  return String(value).padStart(2, '0');
-}
+const pad = value => String(value).padStart(2, '0');
 
 const timer = {
   timestamp: null,
@@ -20,7 +18,7 @@ const timer = {
 
   ready(stamp) {
     this.timestamp = stamp;
-    startButton.addEventListener('click', timer.start);
+    startButton.addEventListener('click', this.start);
   },
 
   start() {
@@ -33,18 +31,20 @@ const timer = {
         Notify.failure('Time is up');
       }
 
-      timerDays.textContent = pad(Math.floor(diff / 86400000));
-      timerHours.textContent = pad(Math.floor((diff % 86400000) / 3600000));
-      timerMinutes.textContent = pad(
-        Math.floor(((diff % 86400000) % 3600000) / 60000)
-      );
-      timerSeconds.textContent = pad(Math.floor((diff % 60000) / 1000));
+      [timerDays, timerHours, timerMinutes, timerSeconds].forEach((el, i) => {
+        el.textContent = pad(
+          Math.floor(
+            (i === 0 ? diff : diff % (86400000 / Math.pow(60, i))) /
+              (86400000 / Math.pow(60, i + 1))
+          )
+        );
+      });
     }, 1000);
   },
 
   stop() {
     clearInterval(timer.interval);
-    startButton.removeEventListener('click', timer.start);
+    startButton.removeEventListener('click', this.start);
   },
 };
 
@@ -56,12 +56,10 @@ flatpickr(datetimePicker, {
   onClose(selectedDates) {
     if (selectedDates[0] > Date.now()) {
       startButton.disabled = false;
-
       timer.stop();
       timer.ready(selectedDates[0]);
       return;
     }
-
     startButton.disabled = true;
     Notify.failure('Please choose a date in the future');
   },
